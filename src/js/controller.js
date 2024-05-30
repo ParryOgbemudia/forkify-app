@@ -3,6 +3,7 @@ import recipeView from './views/recipeView.js';
 import searchView from './views/searchView.js';
 import resultsView from './views/resultsView.js';
 import paginationView from './views/paginationView.js';
+import bookmarkView from './views/bookmarksView.js';
 
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
@@ -21,14 +22,21 @@ const controlRecipe = async function () {
     if (!id) return;
     recipeView.renderSpinner();
 
-    //1. Loading the recipe
+    //Update results view to mark selected search result
+    resultsView.update(model.getSearchResultsPage());
+
+    // 1) Updating bookmark view
+    bookmarkView.update(model.state.bookmarks);
+
+    // 2) Loading the recipe
     await model.loadRecipe(id);
 
-    //2. Rendering recipe
+    // 3) Rendering recipe
     recipeView.render(model.state.recipe);
   } catch (err) {
     // alert(err.message);
     recipeView.renderError();
+    console.error(err);
   }
 };
 
@@ -71,12 +79,32 @@ const controlServings = function (newServings) {
   model.updateServings(newServings);
 
   //Update the recipe view
-  recipeView.render(model.state.recipe);
+  // recipeView.render(model.state.recipe);
+  recipeView.update(model.state.recipe);
+};
+
+const controlAddBookmark = function () {
+  // 1) Add/Remove bookmark
+  if (!model.state.recipe.bookmarked) model.addBookmark(model.state.recipe);
+  else model.deleteBookmark(model.state.recipe.id);
+
+  // Update recipe view
+  recipeView.update(model.state.recipe);
+  console.log(model.state.recipe);
+
+  // 3) Render the bookmarks
+  bookmarkView.render(model.state.bookmarks);
+};
+
+const controlAddBookmarks = function () {
+  bookmarkView.render(model.state.bookmarks);
 };
 
 const init = function () {
+  bookmarkView.addHandlreRender(controlAddBookmarks);
   recipeView.addHandlerRender(controlRecipe);
   recipeView.addHandlerUpdateServings(controlServings);
+  recipeView.addHandlerAddBookmark(controlAddBookmark);
   searchView.addHandlerSearch(controlSearchResults);
   paginationView.addHandlerClick(controlPagination);
 };
